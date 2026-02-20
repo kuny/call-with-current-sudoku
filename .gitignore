@@ -1,0 +1,16 @@
+# Vim swap files
+*.sw?
+*.swp
+
+# Vim backup files
+*~
+*.bak
+
+# Undo files (persistent undo を使っている場合)
+*.un~
+
+# macOS
+.DS_Store
+
+# Common temp
+*.tmp
