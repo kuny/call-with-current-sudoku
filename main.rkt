@@ -74,7 +74,35 @@
             (loop (cdr xs) ret)))))
 
 (define (product h v s)
-  #f)
+  (define (product-internal x y)
+    (let loop ((l x) (ret '()))
+      (cond ((null? l) ret)
+            ((include? y (car l))
+             (loop (cdr l)
+                   (append ret (list (car l)))))
+            (else
+              (loop (cdr l) ret)))))
+  (let* ((hlack (lack h))
+         (vlack (lack v))
+         (slack (lack s))
+         (hvp (product-internal hlack vlack))
+         (hsp (product-internal hlack slack)))
+    (product-internal hvp hsp)))
+
+(define (replace-nth n nw lst)
+  (cond ((null? lst) '())
+        ((zero? n) (cons nw (cdr lst)))
+        (else (cons (car lst)
+                    (replace-nth (- n 1) nw (cdr lst))))))
+
+(define (replace-xy x y nw mtx)
+  (cond ((null? mtx) '())
+        ((zero? y)
+         (append (list (replace-nth x nw (car mtx)))
+                 (cdr mtx)))
+        (else
+          (append (list (car mtx))
+                  (replace-xy x (- y 1) nw (cdr mtx))))))
 
 (module+ test
   ;; Any code in this `test` submodule runs when this file is run using DrRacket
@@ -152,7 +180,67 @@
     (check-equal? (lack '(0 1 2 0 4 0 6 7 8)) '(3 5 9))
     (check-equal? (lack '(0 0 2 1 4 6 0 7 8)) '(3 5 9))
 
+    (check-equal? (product '(0 1 2 3 4 5 6 7 8)
+                           '(0 1 2 3 4 5 6 7 8)
+                           '(0 1 2 3 4 5 6 7 8))
+                  '(9))
+    (check-equal? (product '(0 1 2 3 0 5 6 7 8)
+                           '(0 1 2 3 0 5 6 7 8)
+                           '(0 1 2 3 0 5 6 7 8))
+                  '(4 9))
+    (check-equal? (product '(0 1 2 3 0 5 6 0 8)
+                           '(0 1 2 3 0 5 6 0 8)
+                           '(0 1 2 3 0 5 6 0 8))
+                  '(4 7 9))
+    (check-equal? (product '(2 1 0 3 0 5 6 0 8)
+                           '(0 1 2 3 8 5 6 0 0)
+                           '(3 1 2 0 5 0 6 0 8))
+                  '(4 7 9))
+
+    (check-equal? (replace-nth 8 9 '(1 2 3 4 5 6 7 8 0))
+                  '(1 2 3 4 5 6 7 8 9))
+    (check-equal? (replace-nth 4 5 '(1 2 3 4 0 6 7 8 9))
+                  '(1 2 3 4 5 6 7 8 9))
+
+    (check-equal? (replace-xy 0 0 9 data)
+                  '((9 1 2 3 4 5 6 7 8)
+                    (1 2 3 4 5 6 7 8 9)
+                    (2 3 4 5 6 7 8 9 0)
+                    (3 4 5 6 7 8 9 0 1)
+                    (4 5 6 7 8 9 0 1 2)
+                    (5 6 7 8 9 0 1 2 3)
+                    (6 7 8 9 0 1 2 3 4)
+                    (7 8 9 0 1 2 3 4 5)
+                    (8 9 0 1 2 3 4 5 6)))
+    (check-equal? (replace-xy 7 3 9 data)
+                  '((0 1 2 3 4 5 6 7 8)
+                    (1 2 3 4 5 6 7 8 9)
+                    (2 3 4 5 6 7 8 9 0)
+                    (3 4 5 6 7 8 9 9 1)
+                    (4 5 6 7 8 9 0 1 2)
+                    (5 6 7 8 9 0 1 2 3)
+                    (6 7 8 9 0 1 2 3 4)
+                    (7 8 9 0 1 2 3 4 5)
+                    (8 9 0 1 2 3 4 5 6)))
+
+
+#|
+    (check-equal? (replace-xy 0 0 0 data)
+                  '((0 1 2 3 4 5 6 7 8)
+                    (1 2 3 4 5 6 7 8 9)
+                    (2 3 4 5 6 7 8 9 0)
+                    (3 4 5 6 7 8 9 0 1)
+                    (4 5 6 7 8 9 0 1 2)
+                    (5 6 7 8 9 0 1 2 3)
+                    (6 7 8 9 0 1 2 3 4)
+                    (7 8 9 0 1 2 3 4 5)
+                    (8 9 0 1 2 3 4 5 6)))
+|#
+
+
     )
+
+
 )
 (module+ main
   ;; (Optional) main submodule. Put code here if you need it to be executed when
