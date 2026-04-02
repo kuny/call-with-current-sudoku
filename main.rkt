@@ -32,6 +32,7 @@
           ((= a 1) '(3 4 5))
           (else '(6 7 8)))))
 
+#|
 (define (atom? x)
   (not (pair? x)))
 
@@ -42,6 +43,7 @@
           (else (rec
                   (car x)
                   (rec (cdr x) acc))))))
+|#
 
 (define (map-product f xs yx)
   (map (lambda (x)
