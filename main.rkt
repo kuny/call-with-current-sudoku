@@ -57,8 +57,21 @@
         (ys (block-idxs y)))
     (flatten (map-product matrix-ref+ xs ys))))
 
+(define (include? lst x)
+  (let loop ((l lst))
+    (cond ((null? l) #f)
+          ((equal? (car l) x) #t)
+          (else
+            (loop (cdr l))))))
+
 (define (lack lst)
-  #f)
+  (let loop ((xs '(1 2 3 4 5 6 7 8 9)) (ret '()))
+    (cond ((null? xs) ret)
+          ((not (include? lst (car xs)))
+           (loop (cdr xs) (append ret
+                                  (list (car xs)))))
+          (else 
+            (loop (cdr xs) ret)))))
 
 (define (product h v s)
   #f)
@@ -128,6 +141,17 @@
     (check-equal? (square data 1 1) '(0 1 2 1 2 3 2 3 4))
     (check-equal? (square data 4 4) '(6 7 8 7 8 9 8 9 0))
     (check-equal? (square data 4 7) '(9 0 1 0 1 2 1 2 3))
+
+    (check-equal? (include? '(1 2 3) 3) #t)
+    (check-equal? (include? '(1 2 3) 4) #f)
+    (check-equal? (include? (car data) 4) #t)
+    (check-equal? (include? (car data) 9) #f)
+    
+    (check-equal? (lack '(0 1 2 3 4 5 6 7 8)) '(9))
+    (check-equal? (lack '(0 1 2 0 4 5 6 7 8)) '(3 9))
+    (check-equal? (lack '(0 1 2 0 4 0 6 7 8)) '(3 5 9))
+    (check-equal? (lack '(0 0 2 1 4 6 0 7 8)) '(3 5 9))
+
     )
 )
 (module+ main
