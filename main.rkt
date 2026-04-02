@@ -11,6 +11,10 @@
 
 #| (provide hello-world) |#
 
+(define (matrix-ref d x y)
+  (list-ref
+    (list-ref d y) x))
+
 (define (horizontal d x y)
   (list-ref d y))
 
@@ -20,11 +24,38 @@
         lst
         (loop (+ i 1)
               (append lst
-                (list (list-ref
-                        (list-ref d i) x)))))))
+                      (list (matrix-ref d x i)))))))
+
+(define (block-idxs x)
+  (let ((a (quotient x 3)))
+    (cond ((= a 0) '(0 1 2))
+          ((= a 1) '(3 4 5))
+          (else '(6 7 8)))))
+
+(define (atom? x)
+  (not (pair? x)))
+
+(define (flatten x)
+  (let rec ((x x) (acc '()))
+    (cond ((null? x) acc)
+          ((atom? x) (cons x acc))
+          (else (rec
+                  (car x)
+                  (rec (cdr x) acc))))))
+
+(define (map-product f xs yx)
+  (map (lambda (x)
+         (map (lambda (y)
+                (f x y))
+              yx))
+         xs))
 
 (define (square d x y)
-  #f)
+  (define (matrix-ref+ a b)
+    (matrix-ref d a b))
+  (let ((xs (block-idxs x))
+        (ys (block-idxs y)))
+    (flatten (map-product matrix-ref+ xs ys))))
 
 (define (lack lst)
   #f)
@@ -62,6 +93,11 @@
     (check-equal? (horizontal data 0 8)
                   '(8 9 0 1 2 3 4 5 6))
 
+    (check-equal? (matrix-ref data 0 0) 0)
+    (check-equal? (matrix-ref data 1 0) 1)
+    (check-equal? (matrix-ref data 4 5) 9)
+    (check-equal? (matrix-ref data 8 8) 6)
+
     (check-equal? (vertical data 0 0)
                   '(0 1 2 3 4 5 6 7 8))
     (check-equal? (vertical data 0 1)
@@ -76,9 +112,22 @@
     (check-equal? (vertical data 8 0)
                   '(8 9 0 1 2 3 4 5 6))
 
+    (check-equal? (block-idxs 0) '(0 1 2))
+    (check-equal? (block-idxs 1) '(0 1 2))
+    (check-equal? (block-idxs 2) '(0 1 2))
 
+    (check-equal? (block-idxs 3) '(3 4 5))
+    (check-equal? (block-idxs 4) '(3 4 5))
+    (check-equal? (block-idxs 5) '(3 4 5))
 
+    (check-equal? (block-idxs 6) '(6 7 8))
+    (check-equal? (block-idxs 7) '(6 7 8))
+    (check-equal? (block-idxs 8) '(6 7 8))
 
+    (check-equal? (square data 0 0) '(0 1 2 1 2 3 2 3 4))
+    (check-equal? (square data 1 1) '(0 1 2 1 2 3 2 3 4))
+    (check-equal? (square data 4 4) '(6 7 8 7 8 9 8 9 0))
+    (check-equal? (square data 4 7) '(9 0 1 0 1 2 1 2 3))
     )
 )
 (module+ main
