@@ -7,10 +7,6 @@
 (module+ test
   (require rackunit))
 
-#| (require "hello.rkt") |#
-
-#| (provide hello-world) |#
-
 (define-syntax x-
   (syntax-rules ()
     [(x- x)
@@ -320,7 +316,8 @@
 (module+ main
 
   ;(define filename "./boards/daiso/beginners/Q01.scm")
-  (define filename "./boards/daiso/beginners/Q02.scm")
+  ;(define filename "./boards/daiso/beginners/Q02.scm")
+  (define filename "./boards/daiso/beginners/Q03.scm")
 
   (define board
     (call-with-input-file filename
@@ -328,7 +325,6 @@
                             (read in))))
 
   (result (solver board))
-
 
 )
 
