@@ -98,11 +98,11 @@
         (y (y- xy)))
   (cond ((null? d) '())
         ((zero? y)
-         (append (list (replace-nth x nw (car d)))
+         (cons (replace-nth x nw (car d))
                  (cdr d)))
         (else
-          (append (list (car d))
-                  (replace-xy (list x (- y 1)) nw (cdr d)))))))
+          (cons (car d)
+                (replace-xy (list x (- y 1)) nw (cdr d)))))))
 
 (define (find-empty y l)
   (let loop ((x l) (i 0) (ret '()))
@@ -117,13 +117,12 @@
 
 (define (find-empties d)
   (let loop ((x d) (i 0) (ret '()))
-    (cond ((null? x) (reverse ret))
+    (cond ((null? x) ret)
           (else
             (loop (cdr x)
                   (+ i 1)
-                  (cons (find-empty i (car x)) ret))))))
-                  #| (append ret |#
-                          #| (find-empty i (car x)))))))) |#
+                  (append ret
+                          (find-empty i (car x))))))))
 
 (define (complete? d)
   (let ((empties (find-empties d)))
