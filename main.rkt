@@ -315,9 +315,9 @@
 )
 (module+ main
 
-  ;(define filename "./boards/daiso/beginners/Q01.scm")
-  ;(define filename "./boards/daiso/beginners/Q02.scm")
-  (define filename "./boards/daiso/beginners/Q03.scm")
+  ;(define filename "./boards/daiso/beginners/Q001.scm")
+  ;(define filename "./boards/daiso/beginners/Q002.scm")
+  (define filename "./boards/daiso/beginners/Q003.scm")
 
   (define board
     (call-with-input-file filename
