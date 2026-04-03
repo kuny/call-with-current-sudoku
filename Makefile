@@ -6,8 +6,8 @@
 .PHONY: run test
 
 run:
-	racket main.rkt
+	@racket main.rkt
 
 test:
-	raco test main.rkt
+	@raco test main.rkt
 
