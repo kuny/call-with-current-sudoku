@@ -145,6 +145,7 @@
 
 (define prev '())
 
+
 (define (solver board)
   (cond ((or (complete? board)
              (equal? prev board)) board)
@@ -159,6 +160,44 @@
       (begin
         (displayln (car rows))
         (loop (cdr rows))))))
+
+(define daiso-boards '("./boards/daiso/beginners/Q001.scm"
+                       "./boards/daiso/beginners/Q002.scm"
+                       "./boards/daiso/beginners/Q003.scm"))
+
+(define (daiso n)
+  (let ((board 
+          (call-with-input-file (list-ref daiso-boards (- n 1))
+                                (lambda (in)
+                                  (read in)))))
+    (begin
+      (dspboard board)
+      (dspboard (solver board)))))
+
+(define (read-expr)
+  (display "> ")
+  (read))
+
+(define (eval-expr expr)
+  (cond ((equal? (car expr) 'daiso)
+         (daiso (list-ref expr 1)))
+        (else
+          (displayln expr))))
+
+(define (quit? expr)
+  (or (equal? expr '(quit))
+      (equal? expr '(exit))))
+
+(define (bye)
+  (displayln "bye."))
+
+(define (repl)
+  (let ([expr (read-expr)])
+    (cond [(quit? expr) (bye)]
+          [else
+            (eval-expr expr)
+            (repl)])))
+
 
 (module+ test
 
@@ -314,7 +353,7 @@
 
 )
 (module+ main
-
+#|
   ;(define filename "./boards/daiso/beginners/Q001.scm")
   ;(define filename "./boards/daiso/beginners/Q002.scm")
   (define filename "./boards/daiso/beginners/Q003.scm")
@@ -331,6 +370,9 @@
             (equal? input "Y"))
       (dspboard (solver board))
       (displayln "bye.")))
+|#
+
+(repl)
 
 )
 
