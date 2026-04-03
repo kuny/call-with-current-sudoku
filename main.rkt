@@ -152,7 +152,7 @@
           (set! prev board)
           (solver (solve board)))))
 
-(define (result board)
+(define (dspboard board)
   (let loop ((rows board))
     (if (null? rows) 
       (newline)
@@ -323,8 +323,8 @@
     (call-with-input-file filename
                           (lambda (in)
                             (read in))))
-
-  (result (solver board))
+  (dspboard board)
+  (dspboard (solver board))
 
 )
 
