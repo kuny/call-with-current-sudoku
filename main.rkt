@@ -33,10 +33,9 @@
 (define (vertical d xy)
   (let loop ((i 0) (lst '()))
     (if (> i 8) 
-        lst
+        (reverse lst)
         (loop (+ i 1)
-              (append lst
-                      (list (matrix-ref d (x- xy) i)))))))
+              (cons (matrix-ref d (x- xy) i) lst)))))
 
 (define (block-idxs x)
   (let ((a (quotient x 3)))
@@ -69,20 +68,19 @@
 
 (define (predict lst)
   (let loop ((xs '(1 2 3 4 5 6 7 8 9)) (ret '()))
-    (cond ((null? xs) ret)
+    (cond ((null? xs) (reverse ret))
           ((not (include? lst (car xs)))
-           (loop (cdr xs) (append ret
-                                  (list (car xs)))))
+           (loop (cdr xs) (cons (car xs) ret)))
           (else 
             (loop (cdr xs) ret)))))
 
 (define (product seta setb setc)
   (define (product-internal x y)
     (let loop ((l x) (ret '()))
-      (cond ((null? l) ret)
+      (cond ((null? l) (reverse ret))
             ((include? y (car l))
              (loop (cdr l)
-                   (append ret (list (car l)))))
+                   (cons (car l) ret)))
             (else
               (loop (cdr l) ret)))))
   (let ((ab (product-internal seta setb))
@@ -108,23 +106,24 @@
 
 (define (find-empty y l)
   (let loop ((x l) (i 0) (ret '()))
-    (cond ((null? x) ret)
+    (cond ((null? x) (reverse ret))
           ((zero? (car x))
            (loop (cdr x)
                  (+ i 1)
-                 (append ret (list (list i y)))))
+                 (cons (list i y) ret)))
           (else
             (loop (cdr x) (+ i 1) ret)))))
 
 
 (define (find-empties d)
   (let loop ((x d) (i 0) (ret '()))
-    (cond ((null? x) ret)
+    (cond ((null? x) (reverse ret))
           (else
             (loop (cdr x)
                   (+ i 1)
-                  (append ret
-                          (find-empty i (car x))))))))
+                  (cons (find-empty i (car x)) ret))))))
+                  #| (append ret |#
+                          #| (find-empty i (car x)))))))) |#
 
 (define (complete? d)
   (let ((empties (find-empties d)))
