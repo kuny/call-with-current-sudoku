@@ -324,7 +324,13 @@
                           (lambda (in)
                             (read in))))
   (dspboard board)
-  (dspboard (solver board))
+  (display "Would you like to solve this problem? (y/n): ")
+  (let ((input (read-line)))
+    (newline)
+    (if (or (equal? input "y")
+            (equal? input "Y"))
+      (dspboard (solver board))
+      (displayln "bye.")))
 
 )
 
