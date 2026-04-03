@@ -21,8 +21,6 @@
     [(y- x)
      (second x)]))
 
-
-
 (define (matrix-ref d x y)
   (list-ref
     (list-ref d y) x))
@@ -45,19 +43,6 @@
     (cond ((= a 0) '(0 1 2))
           ((= a 1) '(3 4 5))
           (else '(6 7 8)))))
-
-#|
-(define (atom? x)
-  (not (pair? x)))
-
-(define (flatten x)
-  (let rec ((x x) (acc '()))
-    (cond ((null? x) acc)
-          ((atom? x) (cons x acc))
-          (else (rec
-                  (car x)
-                  (rec (cdr x) acc))))))
-|#
 
 (define (map-product f xs yx)
   (map (lambda (x)
@@ -82,7 +67,7 @@
           (else
             (loop (cdr l))))))
 
-(define (lack lst)
+(define (predict lst)
   (let loop ((xs '(1 2 3 4 5 6 7 8 9)) (ret '()))
     (cond ((null? xs) ret)
           ((not (include? lst (car xs)))
@@ -91,7 +76,7 @@
           (else 
             (loop (cdr xs) ret)))))
 
-(define (product hlack vlack slack)
+(define (product seta setb setc)
   (define (product-internal x y)
     (let loop ((l x) (ret '()))
       (cond ((null? l) ret)
@@ -100,9 +85,9 @@
                    (append ret (list (car l)))))
             (else
               (loop (cdr l) ret)))))
-  (let ((hvp (product-internal hlack vlack))
-        (hsp (product-internal hlack slack)))
-    (product-internal hvp hsp)))
+  (let ((ab (product-internal seta setb))
+        (ac (product-internal seta setc)))
+    (product-internal ab ac)))
 
 (define (replace-nth n nw lst)
   (cond ((null? lst) '())
@@ -142,42 +127,44 @@
                           (find-empty i (car x))))))))
 
 (define (complete? d)
-  (let ((lst (find-empties d)))
-    (if (null? lst) #t #f)))
+  (let ((empties (find-empties d)))
+    (if (null? empties) #t #f)))
 
-(define (solve? d xy)
-  (let* ((hlack (lack (horizontal d xy)))
-         (vlack (lack (vertical d xy)))
-         (slack (lack (square d xy)))
-         (prod (product hlack vlack slack)))
-    (cond ((null? prod) #f)
-          ((> (length prod) 1) #f)
-          (else (car prod)))))
+(define (search-solution board xy)
+  (let* ((hpredicts (predict (horizontal board xy)))
+         (vpredicts (predict (vertical board xy)))
+         (spredicts (predict (square board xy))))
+    (product hpredicts vpredicts spredicts)))
 
-(define (solve-once d)
-  (define (solve-once-internal d xy)
-    (let ((a (solve? d xy)))
-      (if (number? a)
-        (replace-xy xy a d)
-        d)))
-  (let loop ((l (find-empties d)) (data d))
-    (cond ((null? l) data)
+(define (solve board)
+  (define (solve-internal board xy)
+    (let ((s (search-solution board xy)))
+      (if (or (null? s)
+              (> (length s) 1))
+        board
+        (replace-xy xy (car s) board))))
+  (let loop ((empties (find-empties board)) (bd board))
+    (cond ((null? empties) bd)
           (else
-            (loop (cdr l)
-                  (solve-once-internal data (car l)))))))
+            (loop (cdr empties)
+                  (solve-internal bd (car empties)))))))
 
-(define (solver d)
-  (cond ((complete? d) d)
+(define prev '())
+
+(define (solver board)
+  (cond ((or (complete? board)
+             (equal? prev board)) board)
         (else
-          (solver (solve-once d)))))
+          (set! prev board)
+          (solver (solve board)))))
 
-(define (print-result d)
-  (let loop ((l d))
-    (if (null? l) 
+(define (result board)
+  (let loop ((rows board))
+    (if (null? rows) 
       (newline)
       (begin
-        (displayln (car l))
-        (loop (cdr l))))))
+        (displayln (car rows))
+        (loop (cdr rows))))))
 
 (module+ test
 
@@ -246,26 +233,26 @@
     (check-equal? (include? (car data) 4) #t)
     (check-equal? (include? (car data) 9) #f)
     
-    (check-equal? (lack '(0 1 2 3 4 5 6 7 8)) '(9))
-    (check-equal? (lack '(0 1 2 0 4 5 6 7 8)) '(3 9))
-    (check-equal? (lack '(0 1 2 0 4 0 6 7 8)) '(3 5 9))
-    (check-equal? (lack '(0 0 2 1 4 6 0 7 8)) '(3 5 9))
+    (check-equal? (predict '(0 1 2 3 4 5 6 7 8)) '(9))
+    (check-equal? (predict '(0 1 2 0 4 5 6 7 8)) '(3 9))
+    (check-equal? (predict '(0 1 2 0 4 0 6 7 8)) '(3 5 9))
+    (check-equal? (predict '(0 0 2 1 4 6 0 7 8)) '(3 5 9))
 
-    (check-equal? (product (lack '(0 1 2 3 4 5 6 7 8))
-                           (lack '(0 1 2 3 4 5 6 7 8))
-                           (lack '(0 1 2 3 4 5 6 7 8)))
+    (check-equal? (product (predict '(0 1 2 3 4 5 6 7 8))
+                           (predict '(0 1 2 3 4 5 6 7 8))
+                           (predict '(0 1 2 3 4 5 6 7 8)))
                   '(9))
-    (check-equal? (product (lack '(0 1 2 3 0 5 6 7 8))
-                           (lack '(0 1 2 3 0 5 6 7 8))
-                           (lack '(0 1 2 3 0 5 6 7 8)))
+    (check-equal? (product (predict '(0 1 2 3 0 5 6 7 8))
+                           (predict '(0 1 2 3 0 5 6 7 8))
+                           (predict '(0 1 2 3 0 5 6 7 8)))
                   '(4 9))
-    (check-equal? (product (lack '(0 1 2 3 0 5 6 0 8))
-                           (lack '(0 1 2 3 0 5 6 0 8))
-                           (lack '(0 1 2 3 0 5 6 0 8)))
+    (check-equal? (product (predict '(0 1 2 3 0 5 6 0 8))
+                           (predict '(0 1 2 3 0 5 6 0 8))
+                           (predict '(0 1 2 3 0 5 6 0 8)))
                   '(4 7 9))
-    (check-equal? (product (lack '(2 1 0 3 0 5 6 0 8))
-                           (lack '(0 1 2 3 8 5 6 0 0))
-                           (lack '(3 1 2 0 5 0 6 0 8)))
+    (check-equal? (product (predict '(2 1 0 3 0 5 6 0 8))
+                           (predict '(0 1 2 3 8 5 6 0 0))
+                           (predict '(3 1 2 0 5 0 6 0 8)))
                   '(4 7 9))
 
     (check-equal? (replace-nth 8 9 '(1 2 3 4 5 6 7 8 0))
@@ -315,8 +302,8 @@
                                   (0 7) (2 7) (6 7) (8 7)
                                   (0 8) (3 8) (4 8) (5 8) (8 8)))
 
-    (check-equal? (solve? data '(0 0)) #f) 
-    (check-equal? (solve? data '(5 2)) 7)
+    (check-equal? (search-solution data '(0 0)) '(3 7 9)) 
+    (check-equal? (search-solution data '(5 2)) '(7))
 
     (check-equal? (solver data)   
                   '((9 3 8 4 2 6 7 5 1)
@@ -333,7 +320,7 @@
 
 )
 (module+ main
-#|
+
   (let ((board '((0 0 0 4 0 6 0 0 0)
                  (0 6 1 3 0 9 2 4 0)
                  (0 5 2 0 0 0 9 6 0)
@@ -343,8 +330,8 @@
                  (6 0 0 9 0 5 0 0 2)
                  (0 8 0 1 3 4 0 7 0)
                  (0 4 3 0 0 0 8 1 0))))
-    (print-result (solver board)))
-|#
+
+#|
   (let ((board '((4 0 0 0 0 9 8 2 5)
                  (0 9 6 0 0 8 3 7 1)
                  (0 8 0 5 1 0 0 0 4)
@@ -354,7 +341,8 @@
                  (3 1 0 0 0 0 9 4 0)
                  (6 2 0 0 3 0 7 0 0)
                  (8 7 4 2 9 0 0 0 6))))
-    (print-result (solver board)))
+|#
+    (result (solver board)))
 
 
 )
