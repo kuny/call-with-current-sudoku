@@ -121,7 +121,7 @@
           (append (list (car d))
                   (replace-xy (list x (- y 1)) nw (cdr d)))))))
 
-(define (blank y l)
+(define (find-empty y l)
   (let loop ((x l) (i 0) (ret '()))
     (cond ((null? x) ret)
           ((zero? (car x))
@@ -132,18 +132,18 @@
             (loop (cdr x) (+ i 1) ret)))))
 
 
-(define (blanks d)
+(define (find-empties d)
   (let loop ((x d) (i 0) (ret '()))
     (cond ((null? x) ret)
           (else
             (loop (cdr x)
                   (+ i 1)
                   (append ret
-                          (blank i (car x))))))))
+                          (find-empty i (car x))))))))
 
-(define (blank? d)
-  (let ((lst (blanks d)))
-    (if (null? lst) #f #t)))
+(define (complete? d)
+  (let ((lst (find-empties d)))
+    (if (null? lst) #t #f)))
 
 (define (solve? d xy)
   (let* ((hlack (lack (horizontal d xy)))
@@ -160,17 +160,24 @@
       (if (number? a)
         (replace-xy xy a d)
         d)))
-  (let loop ((l (blanks d)) (data d))
+  (let loop ((l (find-empties d)) (data d))
     (cond ((null? l) data)
           (else
             (loop (cdr l)
                   (solve-once-internal data (car l)))))))
 
-(define (solve-times t d)
-  (if (zero? t) d
-    (solve-times (- t 1)
-                 (solve-once d))))
-    
+(define (solver d)
+  (cond ((complete? d) d)
+        (else
+          (solver (solve-once d)))))
+
+(define (print-result d)
+  (let loop ((l d))
+    (if (null? l) 
+      (newline)
+      (begin
+        (displayln (car l))
+        (loop (cdr l))))))
 
 (module+ test
 
@@ -297,8 +304,8 @@
                 (0 8 0 1 3 4 0 7 0)
                 (0 4 3 0 0 0 8 1 0))))
 
-    (check-equal? (blank 0 (list-ref data 0)) '((0 0) (1 0) (2 0) (4 0) (6 0) (7 0) (8 0)))
-    (check-equal? (blanks data) '((0 0) (1 0) (2 0) (4 0) (6 0) (7 0) (8 0)
+    (check-equal? (find-empty 0 (list-ref data 0)) '((0 0) (1 0) (2 0) (4 0) (6 0) (7 0) (8 0)))
+    (check-equal? (find-empties data) '((0 0) (1 0) (2 0) (4 0) (6 0) (7 0) (8 0)
                                   (0 1) (4 1) (8 1) (0 2)
                                   (3 2) (4 2) (5 2) (8 2)
                                   (0 3) (2 3) (6 3) (8 3)
@@ -311,7 +318,7 @@
     (check-equal? (solve? data '(0 0)) #f) 
     (check-equal? (solve? data '(5 2)) 7)
 
-    (check-equal? (solve-times 10 data)   
+    (check-equal? (solver data)   
                   '((9 3 8 4 2 6 7 5 1)
                     (7 6 1 3 5 9 2 4 8)
                     (4 5 2 8 1 7 9 6 3)
@@ -321,22 +328,34 @@
                     (6 1 7 9 8 5 4 3 2)
                     (2 8 9 1 3 4 6 7 5)
                     (5 4 3 6 7 2 8 1 9)))
+ 
   )
 
 )
 (module+ main
-  ;; (Optional) main submodule. Put code here if you need it to be executed when
-  ;; this file is run using DrRacket or the `racket` executable.  The code here
-  ;; does not run when this file is required by another module. Documentation:
-  ;; http://docs.racket-lang.org/guide/Module_Syntax.html#%28part._main-and-test%29
+#|
+  (let ((board '((0 0 0 4 0 6 0 0 0)
+                 (0 6 1 3 0 9 2 4 0)
+                 (0 5 2 0 0 0 9 6 0)
+                 (0 7 0 2 6 8 0 9 0)
+                 (1 2 0 7 0 3 0 8 6)
+                 (8 0 0 5 0 1 0 0 7)
+                 (6 0 0 9 0 5 0 0 2)
+                 (0 8 0 1 3 4 0 7 0)
+                 (0 4 3 0 0 0 8 1 0))))
+    (print-result (solver board)))
+|#
+  (let ((board '((4 0 0 0 0 9 8 2 5)
+                 (0 9 6 0 0 8 3 7 1)
+                 (0 8 0 5 1 0 0 0 4)
+                 (0 0 8 6 0 0 0 0 3)
+                 (0 0 2 0 8 1 0 6 9)
+                 (1 6 0 0 4 0 0 0 0)
+                 (3 1 0 0 0 0 9 4 0)
+                 (6 2 0 0 3 0 7 0 0)
+                 (8 7 4 2 9 0 0 0 6))))
+    (print-result (solver board)))
 
-  (require racket/cmdline)
-  (define who (box "world"))
-  (command-line
-    #:program "my-program"
-    #:once-each
-    [("-n" "--name") name "Who to say hello to" (set-box! who name)]
-    #:args ()
-    (printf "hello ~a~n" (unbox who)))
+
 )
 
