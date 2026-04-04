@@ -161,18 +161,40 @@
         (displayln (car rows))
         (loop (cdr rows))))))
 
-(define daiso-boards '("./boards/daiso/beginners/Q001.scm"
-                       "./boards/daiso/beginners/Q002.scm"
-                       "./boards/daiso/beginners/Q003.scm"))
+(define daiso-boards '(("DAISO 初級編２ Q001" "./boards/daiso/beginners/Q001.scm")
+                       ("DAISO 初級編２ Q002" "./boards/daiso/beginners/Q002.scm")
+                       ("DAISO 初級編２ Q003" "./boards/daiso/beginners/Q003.scm")
+                       ("DAISO 初級編２ Q004" "./boards/daiso/beginners/Q004.scm")
+                       ("DAISO 初級編２ Q051" "./boards/daiso/beginners/Q051.scm")
+                       ("DAISO 初級編２ Q052" "./boards/daiso/beginners/Q052.scm")))
 
-(define (daiso n)
+(define (show-boards boards (i 1))
+  (cond ((null? boards) (newline))
+        (else
+          (displayln (string-append (number->string i) ". " (first (car boards))))
+          (show-boards (cdr boards) (+ i 1)))))
+
+(define (execute-solver filename) 
   (let ((board 
-          (call-with-input-file (list-ref daiso-boards (- n 1))
+          (call-with-input-file filename
                                 (lambda (in)
                                   (read in)))))
     (begin
       (dspboard board)
       (dspboard (solver board)))))
+
+
+(define (daiso expr)
+  (cond ((null? expr) (displayln expr))
+        ((not (= (length expr) 2)) (displayln expr))
+        ((equal? (second expr) 'show) (show-boards daiso-boards))
+        ((and (number? (second expr))
+              (<= (second expr) (length daiso-boards))) 
+         (execute-solver (second (list-ref daiso-boards
+                                           (- (second expr) 1)))))
+        (else (displayln expr))))
+
+
 
 (define (read-expr)
   (display "> ")
@@ -180,7 +202,7 @@
 
 (define (eval-expr expr)
   (cond ((equal? (car expr) 'daiso)
-         (daiso (list-ref expr 1)))
+         (daiso expr))
         (else
           (displayln expr))))
 

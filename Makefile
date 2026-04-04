@@ -6,7 +6,7 @@
 .PHONY: run test
 
 run:
-	@racket main.rkt
+	@rlwrap racket main.rkt
 
 test:
 	@raco test main.rkt
