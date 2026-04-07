@@ -161,12 +161,10 @@
         (displayln (car rows))
         (loop (cdr rows))))))
 
-(define daiso-boards '(("DAISO 初級編２ Q001" "./boards/daiso/beginners/Q001.scm")
-                       ("DAISO 初級編２ Q002" "./boards/daiso/beginners/Q002.scm")
-                       ("DAISO 初級編２ Q003" "./boards/daiso/beginners/Q003.scm")
-                       ("DAISO 初級編２ Q004" "./boards/daiso/beginners/Q004.scm")
-                       ("DAISO 初級編２ Q051" "./boards/daiso/beginners/Q051.scm")
-                       ("DAISO 初級編２ Q052" "./boards/daiso/beginners/Q052.scm")))
+(define (load-config)
+  (call-with-input-file "./config.scm"
+                        (lambda (in)
+                          (read in))))
 
 (define (show-boards boards (i 1))
   (cond ((null? boards) (newline))
@@ -183,26 +181,30 @@
       (dspboard board)
       (dspboard (solver board)))))
 
+(define (load-boards cfg key)
+  (let ((path (cdr (assq key cfg))))
+    (call-with-input-file path
+                          (lambda (in)
+                            (read in)))))
 
-(define (daiso expr)
-  (cond ((null? expr) (displayln expr))
-        ((not (= (length expr) 2)) (displayln expr))
-        ((equal? (second expr) 'show) (show-boards daiso-boards))
-        ((and (number? (second expr))
-              (<= (second expr) (length daiso-boards))) 
-         (execute-solver (second (list-ref daiso-boards
-                                           (- (second expr) 1)))))
-        (else (displayln expr))))
-
-
+(define (exec cfg expr)
+  (let ((my-boards (load-boards cfg (car expr)))) ;daiso-boards))
+    (cond ((null? expr) (displayln expr))
+          ((not (= (length expr) 2)) (displayln expr))
+          ((equal? (second expr) 'show) (show-boards my-boards))
+          ((and (number? (second expr))
+                (<= (second expr) (length my-boards))) 
+           (execute-solver (second (list-ref my-boards
+                                             (- (second expr) 1)))))
+          (else (displayln expr)))))
 
 (define (read-expr)
-  (display "> ")
+  (display "🐢 ")
   (read))
 
-(define (eval-expr expr)
+(define (eval-expr cfg expr)
   (cond ((equal? (car expr) 'daiso)
-         (daiso expr))
+         (exec cfg expr))
         (else
           (displayln expr))))
 
@@ -213,12 +215,12 @@
 (define (bye)
   (displayln "bye."))
 
-(define (repl)
+(define (repl cfg)
   (let ([expr (read-expr)])
     (cond [(quit? expr) (bye)]
           [else
-            (eval-expr expr)
-            (repl)])))
+            (eval-expr cfg expr)
+            (repl cfg)])))
 
 
 (module+ test
@@ -373,28 +375,15 @@
  
   )
 
+  (check-equal? (load-config) '((daiso . "./boards/daiso/daiso.scm")))
+  (let ((cfg (load-config)))
+    (check-equal? (assq 'daiso cfg) '(daiso . "./boards/daiso/daiso.scm"))
+    (check-equal? (cdr (assq 'daiso cfg)) "./boards/daiso/daiso.scm"))
+    #| (check-equal? (load-boards cfg 'daiso) "./boards/daiso/daiso.scm")) |#
 )
 (module+ main
-#|
-  ;(define filename "./boards/daiso/beginners/Q001.scm")
-  ;(define filename "./boards/daiso/beginners/Q002.scm")
-  (define filename "./boards/daiso/beginners/Q003.scm")
 
-  (define board
-    (call-with-input-file filename
-                          (lambda (in)
-                            (read in))))
-  (dspboard board)
-  (display "Would you like to solve this problem? (y/n): ")
-  (let ((input (read-line)))
-    (newline)
-    (if (or (equal? input "y")
-            (equal? input "Y"))
-      (dspboard (solver board))
-      (displayln "bye.")))
-|#
-
-(repl)
+  (repl (load-config))
 
 )
 
