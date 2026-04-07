@@ -181,32 +181,40 @@
       (dspboard board)
       (dspboard (solver board)))))
 
-(define (load-boards cfg key)
+(define (load-boards key cfg)
   (let ((path (cdr (assq key cfg))))
     (call-with-input-file path
                           (lambda (in)
                             (read in)))))
 
+(define (valid? cfg key)
+  (or (eq? key 'help)
+      (assoc key cfg)))
+
 (define (exec cfg expr)
-  (let ((my-boards (load-boards cfg (car expr)))) ;daiso-boards))
+  (let ((my-boards (load-boards (car expr) cfg)))
     (cond ((null? expr) (displayln expr))
-          ((not (= (length expr) 2)) (displayln expr))
+          ((not (= (length expr) 2)) (undefined expr))
           ((equal? (second expr) 'show) (show-boards my-boards))
           ((and (number? (second expr))
                 (<= (second expr) (length my-boards))) 
            (execute-solver (second (list-ref my-boards
                                              (- (second expr) 1)))))
-          (else (displayln expr)))))
+          (else (undefined expr)))))
 
 (define (read-expr)
   (display "🐢 ")
   (read))
 
 (define (eval-expr cfg expr)
-  (cond ((equal? (car expr) 'daiso)
+  (cond ((and (pair? expr)
+              (valid? cfg (car expr)))
          (exec cfg expr))
         (else
-          (displayln expr))))
+          (undefined expr))))
+
+(define (undefined expr)
+  (displayln (format "~s undefined" expr)))
 
 (define (quit? expr)
   (or (equal? expr '(quit))
