@@ -195,7 +195,7 @@
   (let ((my-boards (load-boards (car expr) cfg)))
     (cond ((null? expr) (displayln expr))
           ((not (= (length expr) 2)) (undefined expr))
-          ((equal? (second expr) 'show) (show-boards my-boards))
+          ((equal? (second expr) 'list) (show-boards my-boards))
           ((and (number? (second expr))
                 (<= (second expr) (length my-boards))) 
            (execute-solver (second (list-ref my-boards
