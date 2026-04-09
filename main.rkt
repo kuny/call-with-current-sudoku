@@ -129,7 +129,7 @@
          (s-candidates (candidates (square board xy))))
     (intersect h-candidates v-candidates s-candidates)))
 
-(define (solve board)
+(define (fill-singletons board)
   (define (solve-internal board xy)
     (let ((cands (search-solution board xy)))
       (if (or (null? cands)
@@ -145,7 +145,7 @@
 ;; 制約伝播を収束するまで繰り返す（純粋関数）
 (define (propagate board)
   (let loop ((board board))
-    (let ((next (solve board)))
+    (let ((next (fill-singletons board)))
       (if (equal? next board)
         board
         (loop next)))))
@@ -161,7 +161,7 @@
           (loop (cdr rest) xy count)
           (loop (cdr rest) best best-count))))))
 
-(define (solver board)
+(define (solve board)
   ;; return: 解が見つかった瞬間に全再帰を脱出する継続
   (or (call/cc
         (lambda (return)
@@ -214,7 +214,7 @@
                                   (read in)))))
     (begin
       (display-board board)
-      (display-board (solver board)))))
+      (display-board (solve board)))))
 
 (define (->path x)
   (cdr (assq 'path x)))
@@ -426,7 +426,7 @@
     (check-equal? (search-solution data '(0 0)) '(3 7 9))
     (check-equal? (search-solution data '(5 2)) '(7))
 
-    (check-equal? (solver data)
+    (check-equal? (solve data)
                   '((9 3 8 4 2 6 7 5 1)
                     (7 6 1 3 5 9 2 4 8)
                     (4 5 2 8 1 7 9 6 3)
