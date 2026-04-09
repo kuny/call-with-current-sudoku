@@ -238,15 +238,15 @@
       (assoc key cfg)))
 
 (define (exec cfg expr)
-  (let ((my-boards (load-boards (car expr) cfg)))
-    (cond ((null? expr) (displayln expr))
-          ((not (= (length expr) 2)) (undefined expr))
-          ((equal? (second expr) 'list) (show-boards my-boards))
-          ((and (number? (second expr))
-                (<= (second expr) (length my-boards))) 
-           (execute-solver (second (list-ref my-boards
-                                             (- (second expr) 1)))))
-          (else (undefined expr)))))
+  (cond ((not (= (length expr) 2)) (undefined expr))
+        (else
+         (let ((my-boards (load-boards (car expr) cfg)))
+           (cond ((equal? (second expr) 'list) (show-boards my-boards))
+                 ((and (number? (second expr))
+                       (<= (second expr) (length my-boards)))
+                  (execute-solver (second (list-ref my-boards
+                                                    (- (second expr) 1)))))
+                 (else (undefined expr)))))))
 
 (define (read-expr)
   (display "🐢 ")
@@ -258,10 +258,10 @@
       (newline)
       (begin
         (displayln
-          (format "~a ~a" 
-                  (car (car cfg))
-                  (->note (cdr (car cfg)))))
-        (loop (cdr cfg))))))
+          (format "~a ~a"
+                  (car (car x))
+                  (->note (cdr (car x)))))
+        (loop (cdr x))))))
 
 (define (eval-expr cfg expr)
   (cond ((equal? expr '(help)) (help cfg))
