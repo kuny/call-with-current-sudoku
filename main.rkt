@@ -145,7 +145,6 @@
 
 (define prev '())
 
-
 (define (solver board)
   (cond ((or (complete? board)
              (equal? prev board)) board)
@@ -181,8 +180,18 @@
       (dspboard board)
       (dspboard (solver board)))))
 
+(define (->path x)
+  (cdr (assq 'path x)))
+
+(define (->note x)
+  (cdr (assq 'note x)))
+
+
+(define (config key cfg)
+  (cdr (assq key cfg)))
+
 (define (load-boards key cfg)
-  (let ((path (cdr (assq key cfg))))
+  (let ((path (->path (config key cfg))))
     (call-with-input-file path
                           (lambda (in)
                             (read in)))))
@@ -206,8 +215,20 @@
   (display "🐢 ")
   (read))
 
+(define (help cfg)
+  (let loop ((x cfg))
+    (if (null? x)
+      (newline)
+      (begin
+        (displayln
+          (format "~a ~a" 
+                  (car (car cfg))
+                  (->note (cdr (car cfg)))))
+        (loop (cdr cfg))))))
+
 (define (eval-expr cfg expr)
-  (cond ((and (pair? expr)
+  (cond ((equal? expr '(help)) (help cfg))
+        ((and (pair? expr)
               (valid? cfg (car expr)))
          (exec cfg expr))
         (else
@@ -216,16 +237,15 @@
 (define (undefined expr)
   (displayln (format "~s undefined" expr)))
 
-(define (quit? expr)
-  (or (equal? expr '(quit))
-      (equal? expr '(exit))))
+(define (exit? expr)
+  (equal? expr '(exit)))
 
 (define (bye)
   (displayln "bye."))
 
 (define (repl cfg)
   (let ([expr (read-expr)])
-    (cond [(quit? expr) (bye)]
+    (cond [(exit? expr) (bye)]
           [else
             (eval-expr cfg expr)
             (repl cfg)])))
@@ -382,12 +402,17 @@
                     (5 4 3 6 7 2 8 1 9)))
  
   )
-
-  (check-equal? (load-config) '((daiso . "./boards/daiso/daiso.scm")))
+#|
+  (check-equal? (load-config) '((daiso . ((path . "./boards/daiso/daiso.scm")))))
   (let ((cfg (load-config)))
-    (check-equal? (assq 'daiso cfg) '(daiso . "./boards/daiso/daiso.scm"))
-    (check-equal? (cdr (assq 'daiso cfg)) "./boards/daiso/daiso.scm"))
+    (check-equal? (assq 'daiso cfg) '(daiso . ((path . "./boards/daiso/daiso.scm"))))
+    (check-equal? (cdr (assq 'daiso cfg)) '((path . "./boards/daiso/daiso.scm"))))
     #| (check-equal? (load-boards cfg 'daiso) "./boards/daiso/daiso.scm")) |#
+
+|#
+  (let ((cfg '((daiso . ((path . "./boards/daiso/daiso.scm"))))))
+    (check-equal? (->path (cdr (assq 'daiso cfg))) "./boards/daiso/daiso.scm"))
+
 )
 (module+ main
 
