@@ -1,4 +1,4 @@
-# Sudoku Solver in Racket
+# call with current sudoku
 
 A simple Sudoku solver written in Racket.  
 It combines constraint propagation, MRV (Minimum Remaining Values), and backtracking with `call/cc`.
