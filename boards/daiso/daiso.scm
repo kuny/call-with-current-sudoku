@@ -3,6 +3,7 @@
  ("DAISO 初級編２ Q003" "./boards/daiso/beginners/Q003.scm")
  ("DAISO 初級編２ Q004" "./boards/daiso/beginners/Q004.scm")
  ("DAISO 初級編２ Q051" "./boards/daiso/beginners/Q051.scm")
- ("DAISO 初級編２ Q052" "./boards/daiso/beginners/Q052.scm"))
-
+ ("DAISO 初級編２ Q052" "./boards/daiso/beginners/Q052.scm")
+ ("DAISO 上級編 Q001" "./boards/daiso/advanced/Q001.scm")
+ ("DAISO 上級編 Q100" "./boards/daiso/advanced/Q100.scm"))
 

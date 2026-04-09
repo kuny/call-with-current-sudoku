@@ -1,1 +1,1 @@
-((daiso . ((note . "DAISO 初級編２") (path . "./boards/daiso/daiso.scm"))))
+((daiso . ((note . "DAISO ナンプレ") (path . "./boards/daiso/daiso.scm"))))
