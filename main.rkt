@@ -7,14 +7,14 @@
 (module+ test
   (require rackunit))
 
-(define-syntax x-
+(define-syntax coord-x
   (syntax-rules ()
-    [(x- x)
+    [(coord-x x)
      (first x)]))
 
-(define-syntax y-
+(define-syntax coord-y
   (syntax-rules ()
-    [(y- x)
+    [(coord-y x)
      (second x)]))
 
 (define (matrix-ref d x y)
@@ -22,16 +22,16 @@
     (list-ref d y) x))
 
 (define (horizontal d xy)
-  (let  ((x (x- xy))
-         (y (y- xy)))
+  (let  ((x (coord-x xy))
+         (y (coord-y xy)))
     (list-ref d y)))
 
 (define (vertical d xy)
   (let loop ((i 0) (lst '()))
-    (if (> i 8) 
+    (if (> i 8)
         (reverse lst)
         (loop (+ i 1)
-              (cons (matrix-ref d (x- xy) i) lst)))))
+              (cons (matrix-ref d (coord-x xy) i) lst)))))
 
 (define (index-set x)
   (let ((a (quotient x 3)))
@@ -39,7 +39,7 @@
           ((= a 1) '(3 4 5))
           (else '(6 7 8)))))
 
-(define (map-product f xs yx)
+(define (cartesian-map f xs yx)
   (map (lambda (x)
          (map (lambda (y)
                 (f x y))
@@ -47,41 +47,41 @@
          xs))
 
 (define (square d xy)
-  (let* ((x (x- xy))
-         (y (y- xy))
+  (let* ((x (coord-x xy))
+         (y (coord-y xy))
          (xs (index-set x))
          (ys (index-set y)))
-    (flatten (map-product (lambda (a b)
-                            (matrix-ref d a b))
+    (flatten (cartesian-map (lambda (a b)
+                              (matrix-ref d a b))
                             xs ys))))
 
-(define (include? lst x)
+(define (contains? lst x)
   (let loop ((l lst))
     (cond ((null? l) #f)
           ((equal? (car l) x) #t)
           (else
             (loop (cdr l))))))
 
-(define (predict lst)
+(define (candidates lst)
   (let loop ((xs '(1 2 3 4 5 6 7 8 9)) (ret '()))
     (cond ((null? xs) (reverse ret))
-          ((not (include? lst (car xs)))
+          ((not (contains? lst (car xs)))
            (loop (cdr xs) (cons (car xs) ret)))
-          (else 
+          (else
             (loop (cdr xs) ret)))))
 
-(define (product seta setb setc)
-  (define (product-internal x y)
+(define (intersect seta setb setc)
+  (define (intersect-pair x y)
     (let loop ((l x) (ret '()))
       (cond ((null? l) (reverse ret))
-            ((include? y (car l))
+            ((contains? y (car l))
              (loop (cdr l)
                    (cons (car l) ret)))
             (else
               (loop (cdr l) ret)))))
-  (let ((ab (product-internal seta setb))
-        (ac (product-internal seta setc)))
-    (product-internal ab ac)))
+  (let ((ab (intersect-pair seta setb))
+        (ac (intersect-pair seta setc)))
+    (intersect-pair ab ac)))
 
 (define (replace-nth n nw lst)
   (cond ((null? lst) '())
@@ -90,8 +90,8 @@
                     (replace-nth (- n 1) nw (cdr lst))))))
 
 (define (replace-xy xy nw d)
-  (let ((x (x- xy))
-        (y (y- xy)))
+  (let ((x (coord-x xy))
+        (y (coord-y xy)))
   (cond ((null? d) '())
         ((zero? y)
          (cons (replace-nth x nw (car d))
@@ -121,34 +121,33 @@
                           (find-empty i (car x))))))))
 
 (define (complete? d)
-  (let ((empties (find-empties d)))
-    (if (null? empties) #t #f)))
+  (null? (find-empties d)))
 
 (define (search-solution board xy)
-  (let* ((hpredicts (predict (horizontal board xy)))
-         (vpredicts (predict (vertical board xy)))
-         (spredicts (predict (square board xy))))
-    (product hpredicts vpredicts spredicts)))
+  (let* ((h-candidates (candidates (horizontal board xy)))
+         (v-candidates (candidates (vertical board xy)))
+         (s-candidates (candidates (square board xy))))
+    (intersect h-candidates v-candidates s-candidates)))
 
 (define (solve board)
   (define (solve-internal board xy)
-    (let ((s (search-solution board xy)))
-      (if (or (null? s)
-              (> (length s) 1))
+    (let ((cands (search-solution board xy)))
+      (if (or (null? cands)
+              (> (length cands) 1))
         board
-        (replace-xy xy (car s) board))))
-  (let loop ((empties (find-empties board)) (bd board))
-    (cond ((null? empties) bd)
+        (replace-xy xy (car cands) board))))
+  (let loop ((empties (find-empties board)) (board board))
+    (cond ((null? empties) board)
           (else
             (loop (cdr empties)
-                  (solve-internal bd (car empties)))))))
+                  (solve-internal board (car empties)))))))
 
 ;; 制約伝播を収束するまで繰り返す（純粋関数）
 (define (propagate board)
-  (let loop ((bd board))
-    (let ((next (solve bd)))
-      (if (equal? next bd)
-        bd
+  (let loop ((board board))
+    (let ((next (solve board)))
+      (if (equal? next board)
+        board
         (loop next)))))
 
 ;; 候補数が最少の空きセルを返す（MRVヒューリスティック）
@@ -166,9 +165,9 @@
   ;; return: 解が見つかった瞬間に全再帰を脱出する継続
   (or (call/cc
         (lambda (return)
-          ;; bt: board × fail → void
+          ;; backtrack: board × fail → void
           ;;   fail は「この枝が失敗したとき呼ぶサンク」
-          (define (bt board fail)
+          (define (backtrack board fail)
             (let ((propagated (propagate board)))
               (if (complete? propagated)
                 (return propagated)           ; 解発見 → 即脱出
@@ -182,16 +181,16 @@
           (define (try-each cands xy board fail)
             (if (null? cands)
               (fail)
-              (bt (replace-xy xy (car cands) board)
-                  (lambda ()                  ; この候補が失敗したら次へ
-                    (try-each (cdr cands) xy board fail)))))
-          (bt board (lambda () #f))           ; 初期失敗継続は #f を返す
+              (backtrack (replace-xy xy (car cands) board)
+                         (lambda ()           ; この候補が失敗したら次へ
+                           (try-each (cdr cands) xy board fail)))))
+          (backtrack board (lambda () #f))    ; 初期失敗継続は #f を返す
           #f))
       board))
 
-(define (dspboard board)
+(define (display-board board)
   (let loop ((rows board))
-    (if (null? rows) 
+    (if (null? rows)
       (newline)
       (begin
         (displayln (car rows))
@@ -208,14 +207,14 @@
           (displayln (string-append (number->string i) ". " (first (car boards))))
           (show-boards (cdr boards) (+ i 1)))))
 
-(define (execute-solver filename) 
-  (let ((board 
+(define (execute-solver filename)
+  (let ((board
           (call-with-input-file filename
                                 (lambda (in)
                                   (read in)))))
     (begin
-      (dspboard board)
-      (dspboard (solver board)))))
+      (display-board board)
+      (display-board (solver board)))))
 
 (define (->path x)
   (cdr (assq 'path x)))
@@ -237,18 +236,18 @@
   (or (eq? key 'help)
       (assoc key cfg)))
 
-(define (exec cfg expr)
+(define (run-command cfg expr)
   (cond ((not (= (length expr) 2)) (undefined expr))
         (else
-         (let ((my-boards (load-boards (car expr) cfg)))
-           (cond ((equal? (second expr) 'list) (show-boards my-boards))
+         (let ((boards (load-boards (car expr) cfg)))
+           (cond ((equal? (second expr) 'list) (show-boards boards))
                  ((and (number? (second expr))
-                       (<= (second expr) (length my-boards)))
-                  (execute-solver (second (list-ref my-boards
+                       (<= (second expr) (length boards)))
+                  (execute-solver (second (list-ref boards
                                                     (- (second expr) 1)))))
                  (else (undefined expr)))))))
 
-(define (read-expr)
+(define (read-command)
   (display "🐢 ")
   (read))
 
@@ -263,11 +262,11 @@
                   (->note (cdr (car x)))))
         (loop (cdr x))))))
 
-(define (eval-expr cfg expr)
+(define (dispatch-command cfg expr)
   (cond ((equal? expr '(help)) (help cfg))
         ((and (pair? expr)
               (valid? cfg (car expr)))
-         (exec cfg expr))
+         (run-command cfg expr))
         (else
           (undefined expr))))
 
@@ -281,10 +280,10 @@
   (displayln "bye."))
 
 (define (repl cfg)
-  (let ([expr (read-expr)])
+  (let ([expr (read-command)])
     (cond [(exit? expr) (bye)]
           [else
-            (eval-expr cfg expr)
+            (dispatch-command cfg expr)
             (repl cfg)])))
 
 
@@ -350,31 +349,31 @@
     (check-equal? (square data '(4 4)) '(6 7 8 7 8 9 8 9 0))
     (check-equal? (square data '(4 7)) '(9 0 1 0 1 2 1 2 3))
 
-    (check-equal? (include? '(1 2 3) 3) #t)
-    (check-equal? (include? '(1 2 3) 4) #f)
-    (check-equal? (include? (car data) 4) #t)
-    (check-equal? (include? (car data) 9) #f)
-    
-    (check-equal? (predict '(0 1 2 3 4 5 6 7 8)) '(9))
-    (check-equal? (predict '(0 1 2 0 4 5 6 7 8)) '(3 9))
-    (check-equal? (predict '(0 1 2 0 4 0 6 7 8)) '(3 5 9))
-    (check-equal? (predict '(0 0 2 1 4 6 0 7 8)) '(3 5 9))
+    (check-equal? (contains? '(1 2 3) 3) #t)
+    (check-equal? (contains? '(1 2 3) 4) #f)
+    (check-equal? (contains? (car data) 4) #t)
+    (check-equal? (contains? (car data) 9) #f)
 
-    (check-equal? (product (predict '(0 1 2 3 4 5 6 7 8))
-                           (predict '(0 1 2 3 4 5 6 7 8))
-                           (predict '(0 1 2 3 4 5 6 7 8)))
+    (check-equal? (candidates '(0 1 2 3 4 5 6 7 8)) '(9))
+    (check-equal? (candidates '(0 1 2 0 4 5 6 7 8)) '(3 9))
+    (check-equal? (candidates '(0 1 2 0 4 0 6 7 8)) '(3 5 9))
+    (check-equal? (candidates '(0 0 2 1 4 6 0 7 8)) '(3 5 9))
+
+    (check-equal? (intersect (candidates '(0 1 2 3 4 5 6 7 8))
+                             (candidates '(0 1 2 3 4 5 6 7 8))
+                             (candidates '(0 1 2 3 4 5 6 7 8)))
                   '(9))
-    (check-equal? (product (predict '(0 1 2 3 0 5 6 7 8))
-                           (predict '(0 1 2 3 0 5 6 7 8))
-                           (predict '(0 1 2 3 0 5 6 7 8)))
+    (check-equal? (intersect (candidates '(0 1 2 3 0 5 6 7 8))
+                             (candidates '(0 1 2 3 0 5 6 7 8))
+                             (candidates '(0 1 2 3 0 5 6 7 8)))
                   '(4 9))
-    (check-equal? (product (predict '(0 1 2 3 0 5 6 0 8))
-                           (predict '(0 1 2 3 0 5 6 0 8))
-                           (predict '(0 1 2 3 0 5 6 0 8)))
+    (check-equal? (intersect (candidates '(0 1 2 3 0 5 6 0 8))
+                             (candidates '(0 1 2 3 0 5 6 0 8))
+                             (candidates '(0 1 2 3 0 5 6 0 8)))
                   '(4 7 9))
-    (check-equal? (product (predict '(2 1 0 3 0 5 6 0 8))
-                           (predict '(0 1 2 3 8 5 6 0 0))
-                           (predict '(3 1 2 0 5 0 6 0 8)))
+    (check-equal? (intersect (candidates '(2 1 0 3 0 5 6 0 8))
+                             (candidates '(0 1 2 3 8 5 6 0 0))
+                             (candidates '(3 1 2 0 5 0 6 0 8)))
                   '(4 7 9))
 
     (check-equal? (replace-nth 8 9 '(1 2 3 4 5 6 7 8 0))
@@ -424,10 +423,10 @@
                                   (0 7) (2 7) (6 7) (8 7)
                                   (0 8) (3 8) (4 8) (5 8) (8 8)))
 
-    (check-equal? (search-solution data '(0 0)) '(3 7 9)) 
+    (check-equal? (search-solution data '(0 0)) '(3 7 9))
     (check-equal? (search-solution data '(5 2)) '(7))
 
-    (check-equal? (solver data)   
+    (check-equal? (solver data)
                   '((9 3 8 4 2 6 7 5 1)
                     (7 6 1 3 5 9 2 4 8)
                     (4 5 2 8 1 7 9 6 3)
@@ -437,7 +436,7 @@
                     (6 1 7 9 8 5 4 3 2)
                     (2 8 9 1 3 4 6 7 5)
                     (5 4 3 6 7 2 8 1 9)))
- 
+
   )
 #|
   (check-equal? (load-config) '((daiso . ((path . "./boards/daiso/daiso.scm")))))
@@ -456,4 +455,3 @@
   (repl (load-config))
 
 )
-
