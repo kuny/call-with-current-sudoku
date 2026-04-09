@@ -143,14 +143,51 @@
             (loop (cdr empties)
                   (solve-internal bd (car empties)))))))
 
-(define prev '())
+;; 制約伝播を収束するまで繰り返す（純粋関数）
+(define (propagate board)
+  (let loop ((bd board))
+    (let ((next (solve bd)))
+      (if (equal? next bd)
+        bd
+        (loop next)))))
+
+;; 候補数が最少の空きセルを返す（MRVヒューリスティック）
+(define (find-best-empty board empties)
+  (let loop ((rest empties) (best #f) (best-count 10))
+    (if (null? rest)
+      best
+      (let* ((xy (car rest))
+             (count (length (search-solution board xy))))
+        (if (< count best-count)
+          (loop (cdr rest) xy count)
+          (loop (cdr rest) best best-count))))))
 
 (define (solver board)
-  (cond ((or (complete? board)
-             (equal? prev board)) board)
-        (else
-          (set! prev board)
-          (solver (solve board)))))
+  ;; return: 解が見つかった瞬間に全再帰を脱出する継続
+  (or (call/cc
+        (lambda (return)
+          ;; bt: board × fail → void
+          ;;   fail は「この枝が失敗したとき呼ぶサンク」
+          (define (bt board fail)
+            (let ((propagated (propagate board)))
+              (if (complete? propagated)
+                (return propagated)           ; 解発見 → 即脱出
+                (let* ((empties (find-empties propagated))
+                       (best-xy (find-best-empty propagated empties)))
+                  (if (not best-xy)
+                    (fail)                    ; 空きなし・未完 → 失敗
+                    (try-each (search-solution propagated best-xy)
+                              best-xy propagated fail))))))
+          ;; 候補を順に試す。尽きたら fail を呼ぶ
+          (define (try-each cands xy board fail)
+            (if (null? cands)
+              (fail)
+              (bt (replace-xy xy (car cands) board)
+                  (lambda ()                  ; この候補が失敗したら次へ
+                    (try-each (cdr cands) xy board fail)))))
+          (bt board (lambda () #f))           ; 初期失敗継続は #f を返す
+          #f))
+      board))
 
 (define (dspboard board)
   (let loop ((rows board))
