@@ -3,7 +3,7 @@
 # Purpose:
 #--------------------------------------------------
 
-.PHONY: clean build exe run test
+.PHONY: clean build run debug test
 
 all: clean build
 
@@ -13,10 +13,10 @@ clean:
 build:
 	@raco exe main.rkt
 
-exe:
+run:
 	@rlwrap ./main
 
-run:
+debug:
 	@rlwrap racket main.rkt
 
 test:

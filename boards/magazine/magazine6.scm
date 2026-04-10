@@ -1,0 +1,11 @@
+(("ナンプレ雑誌 Q118" "./boards/magazine/stage6/Q118.scm")
+ ("ナンプレ雑誌 Q119" "./boards/magazine/stage6/Q119.scm")
+ ("ナンプレ雑誌 Q120" "./boards/magazine/stage6/Q120.scm")
+ ("ナンプレ雑誌 Q121" "./boards/magazine/stage6/Q121.scm")
+ ("ナンプレ雑誌 Q122" "./boards/magazine/stage6/Q122.scm")
+ ("ナンプレ雑誌 Q123" "./boards/magazine/stage6/Q123.scm")
+ ("ナンプレ雑誌 Q124" "./boards/magazine/stage6/Q124.scm")
+ ("ナンプレ雑誌 Q125" "./boards/magazine/stage6/Q125.scm")
+ ("ナンプレ雑誌 Q126" "./boards/magazine/stage6/Q126.scm")
+ ("ナンプレ雑誌 Q127" "./boards/magazine/stage6/Q127.scm"))
+
