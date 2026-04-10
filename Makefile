@@ -3,7 +3,18 @@
 # Purpose:
 #--------------------------------------------------
 
-.PHONY: run test
+.PHONY: clean build exe run test
+
+all: clean build
+
+clean:
+	@rm ./main
+
+build:
+	@raco exe main.rkt
+
+exe:
+	@rlwrap ./main
 
 run:
 	@rlwrap racket main.rkt

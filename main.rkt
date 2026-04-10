@@ -265,6 +265,9 @@
 (define (dispatch-command cfg expr)
   (cond ((equal? expr '(help)) (help cfg))
         ((and (pair? expr)
+              (equal? (car expr) '+))
+         (displayln (apply + (cdr expr))))
+        ((and (pair? expr)
               (valid? cfg (car expr)))
          (run-command cfg expr))
         (else
